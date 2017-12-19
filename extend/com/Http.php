@@ -26,6 +26,7 @@ class Http extends Handle
         $result = [
             'code' => $statusCode,
             'error' => $e->getMessage(),
+            'type'=>'system',
             'time' => $_SERVER['REQUEST_TIME']
         ];
         return json($result, $statusCode);

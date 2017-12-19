@@ -27,25 +27,24 @@ class Product extends WMSBaseModel {
     public  function suppliers() {
         return $this->belongsToMany('supplier','gms_supplier_product');
     }
-    
+
     /**
-    * 描述：产品和图像的一对多关系
-    * @date 2017年11月13日上午10:12:01
-    * @return 图片对象的集合
-    */
+     * 描述：产品和图像的一对多关系
+     * @return \think\model\relation\HasMany
+     */
     public function images()
     {
+       // return 'sadasdas';
         return $this->hasMany('\\app\\system\\model\\Upload','product_id')->field('id,path');
     }
-    
+
     /**
-    * 描述：获取产品列表信息 
-    * @date 2017年11月3日上午11:08:33
-    * @param    string              $keywords     搜索关键词
-    * @param    integer             $page         页序数
-    * @param    integer             $limit        每页数量
-    * @return   boolean|string|array              false|错误信息|产品列表
-    */
+     * 描述：获取产品列表信息
+     * @param string $keywords        搜索关键词
+     * @param integer $page           页序数
+     * @param integer $limit          每页数量
+     * @return bool|string|array      false|错误信息|产品列表
+     */
     public function getDataList($keywords, $page, $limit) {
         $map = [];
         
@@ -81,13 +80,13 @@ class Product extends WMSBaseModel {
           }
         
     }
-    
+
     /**
-    * 描述：创建新产品  
-    * @param    array       $param      产品详情属性数组
-    * @return   boolean|string       布尔值| 错误信息    
-    * @date 2017年11月3日上午11:16:47
-    */
+     * 描述：创建新产品
+     * @param array $param 产品详情属性数组
+     * @return bool
+     * @throws \think\exception\PDOException
+     */
     public function createData($param) {
         // 验证
         $validate = validate($this->name);
@@ -98,33 +97,28 @@ class Product extends WMSBaseModel {
         $this->startTrans();
         try {
             $this->data($param)->allowField(true)->save();
-            if ($param['images']) {
+            if (!empty($param['images'])) {
                 $this->images()->saveAll($param['images']);
             }
             $this->commit();
             return true;
         } catch(\Exception $e) {
-            $this->error = '添加失败';
+            $this->error = '添加失败:'.$e->getMessage();
             $this->rollback();
             return false;
         }
     }
-    
+
     /**
-    * 描述：根据产品ID更新产品详情  
-    * @date 2017年11月3日上午11:17:06
-    * @param    array       $param      产品详情属性数组
-    * @param    integer     $id         产品ID  
-    * @param    string      $scense     验证场景  
-    * @return   boolean                 布尔值             
-    */
+     * 描述：根据产品ID更新产品详情
+     * @param array $param              产品详情属性数组
+     * @param int $id                   产品ID
+     * @param null $scense              验证场景
+     * @return bool|null|\think\Model   布尔值
+     * @throws \think\exception\PDOException
+     */
     public function updateDataById($param, $id, $scense = null)
     {
-       
-        $data = $this->getDataById($id);
-        if (!$data) {
-            return $data;
-        }
         // 验证
         $validate = validate($this->name);
         if (!$validate->scene($scense)->check($param)) {
@@ -133,6 +127,10 @@ class Product extends WMSBaseModel {
          }
         $this->startTrans();
         try {
+            $data = $this->getDataById($id);
+            if (!$data) {
+                return $data;
+            }
             $this->allowField(true)->save($param, [$this->getPk() => $id]);
             $this->commit();
             return true;
@@ -142,28 +140,22 @@ class Product extends WMSBaseModel {
             return false;
         }
     }
-    
+
     /**
-     * 描述：根据id删除数据 
-     * @date 2017年11月2日下午7:47:52
-     * @param       sting               $id             产品ID
-     * @param       boolean             $delSon         是否存在子集
-     * @return      boolean                             布尔值
+     * 描述：根据id删除数
+     * @param string $id                        产品ID
+     * @param bool $delSon                      是否存在子集
+     * @return bool|null|\think\Model           布尔值
+     * @throws \think\exception\PDOException
      */
     public function delDataById($id = '', $delSon = false)
     {
-        $data = $this->getDataById($id);
-        if (!$data) {
-            return $data;
-        }
-        $data = $this->get($id);
-        if (!$data) {
-            $this->error = '找不到相关数据';
-            return false;
-        }
-        
         $this->startTrans();
         try {
+            $data = $this->getDataById($id);
+            if (!$data) {
+                return $data;
+            }
             $data = $this->getDataById($id);
             $images=$data->images();
             $imageList = $images->select();
@@ -181,15 +173,16 @@ class Product extends WMSBaseModel {
             return false;
         }
     }
-    
+
     /**
-     * 描述：根据数值中id值批量删除数据 
+     * 描述：根据数值中id值批量删除数据
      * @date 2017年11月2日下午7:51:31
-     * @param    array               $ids           产品ID的数组
-     * @param    boolean          $delSon        是否存在子集
-     * @return   boolean|string                  布尔值|错误信息
+     * @param    array $ids         产品ID的数组
+     * @param    boolean $delSon    是否存在子集
+     * @return   boolean|string     布尔值|错误信息
+     * @throws \think\exception\PDOException
      */
-    public function delDatas($ids = [], $delSon = false)
+    public function delDataCollection($ids = [], $delSon = false)
     {
         if (empty($ids)) {
             $this->error = '删除失败';

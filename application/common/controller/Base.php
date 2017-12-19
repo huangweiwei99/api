@@ -5,18 +5,22 @@ use think\Controller;
 use think\Request;
 
 /**
- *
- * @author huangweiwei
- * base 基类控制器
+ * 类描述：基类控制器
+ * Class Base
+ * @package app\common\controller
  */
 class Base extends Controller
 {
     /*******************类属性*******************/
+
+    /**
+     * @var 获取传入的参数
+     */
     public $param;
     
     /*******************类方法*******************/
     /**
-     * 初始化方法
+     * 描述：构造函数
      */
     public function _initialize()
     {
@@ -31,12 +35,12 @@ class Base extends Controller
         $this->param =$param;
     }
     
+
     /**
-    * 描述：处理参数中的空白
-    * @date 2017年11月6日下午2:21:25
-    * @param        array           
-    * @return return_type
-    */
+     * 描述：处理参数中的空白
+     * @param $data array
+     * @return mixed
+     */
     public function trimData($data){
         foreach ($data as $k => $v) {
             if(!is_array($v)){

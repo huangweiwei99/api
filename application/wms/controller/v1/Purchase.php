@@ -2,33 +2,44 @@
 
 namespace app\wms\controller\v1;
 
-use think\Controller;
-use think\Request;
+use app\common\controller\Api as ApiController;
 
-class Purchase extends Controller
+class Purchase extends ApiController
 {
     /**
      * 显示资源列表
-     *
      * @return \think\Response
      */
     public function index()
     {
-        $data = ['name'=>'api','url'=>'gms.com'];
-        return ['data'=>$data,'code'=>1,'message'=>'采购单列表操作完成'];
+        $param = $this->param;
+        $keywords = isset( $param['keywords']) ? $param['keywords'] : null;
+        $page = isset( $param['page'])  ?  $param['page']: null;
+        $limit = isset( $param['limit']) ?  $param['limit']: null;
+
+        $data = $this->wmsService()->getPurchaseList($keywords,$page,$limit);
+
+        if(!is_array($data)){
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => $data]);
+
+
     }
 
 
     /**
      * 保存新建的资源
-     *
-     * @param  \think\Request  $request
      * @return \think\Response
      */
-    public function save(Request $request)
+    public function save()
     {
-        $data = ['name'=>'api','url'=>'gms.com'];
-        return ['data'=>$data,'code'=>1,'message'=>'save创建采购单操作完成'];
+        $param = $this->param;
+        $data = $this->wmsService()->savePurchase($param);
+        if ($data !== true) {
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => '添加成功']);
     }
 
     /**
@@ -37,10 +48,15 @@ class Purchase extends Controller
      * @param  int  $id
      * @return \think\Response
      */
-    public function read($id)
+    public function read()
     {
-        $data = ['name'=>'api','url'=>'gms.com'];
-        return ['data'=>$data,'code'=>1,'message'=>'read单个采购单详细操作完成'.$id];
+        $param = $this->param;
+        $data = $this->wmsService()->getPurchaseById($param['id']);
+        if (is_string($data)) {
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => $data]);
+
     }
 
 
@@ -51,21 +67,38 @@ class Purchase extends Controller
      * @param  int  $id
      * @return \think\Response
      */
-    public function update(Request $request, $id)
+    public function update()
     {
-        $data = ['name'=>'api','url'=>'gms.com'];
-        return ['data'=>$data,'code'=>1,'message'=>'update保存已有采购单操作完成'];
+        $param = $this->param;
+
+        $data = $this->wmsService()->updatePurchaseById($param, $param['id']);
+        if($data!==true){
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => '编辑成功']);
     }
 
     /**
      * 删除指定资源
-     *
-     * @param  int  $id
      * @return \think\Response
      */
-    public function delete($id)
+    public function delete()
     {
-        $data = ['name'=>'api','url'=>'gms.com'];
-        return ['data'=>$data,'code'=>1,'message'=>'delete删除采购单操作完成'];
+        $param = $this->param;
+        $data = $this->wmsService()->deletePurchase($param['id']);
+        if ($data!==true) {
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => '删除成功']);
+    }
+
+    public function deletes()
+    {
+        $param = $this->param;
+        $data = $this->wmsService()->deletePurchaseByIds($param['ids']);
+        if ($data!==true) {
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => '批量删除成功']);
     }
 }

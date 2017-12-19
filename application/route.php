@@ -26,5 +26,7 @@ return [
     '/:version/wms/products/:id/images' => ['wms/:version.Product/saveImages', ['method' => 'POST']],
     //以ID数组批量删除供应商
     '/:version/wms/suppliers/deletes' => ['wms/:version.Supplier/deletes', ['method' => 'POST']],
+    //以ID数组批量删除采购单
+    '/:version/wms/purchase/deletes' => ['wms/:version.Purchase/deletes', ['method' => 'POST']],
 ];
 

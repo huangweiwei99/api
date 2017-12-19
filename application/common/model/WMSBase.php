@@ -16,6 +16,8 @@ use app\common\model\Base;
 
 class WMSBase extends Base
 {
-    // 设置当前模型的数据库连接(多数据库访问)
+    /**
+     * @var string 设置当前模型的数据库连接(多数据库访问)
+     */
     protected $connection = 'wms_db_config';
 }

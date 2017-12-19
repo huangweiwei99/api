@@ -250,9 +250,9 @@ return [
         // 数据库用户名
         'username'    => 'root',
         // 数据库密码
-        'password'    => 'root',
+        'password'    => '',
         // 端口
-        'hostport'        => '8889',
+        'hostport'    => '3306',
         // 数据库编码默认采用utf8
         'charset'     => 'utf8',
         // 数据库表前缀
@@ -275,9 +275,9 @@ return [
         // 数据库用户名
         'username'    => 'root',
         // 数据库密码
-        'password'    => 'root',
+        'password'    => '',
         // 端口
-        'hostport'        => '8889',
+        'hostport'    => '3306',
         // 数据库编码默认采用utf8
         'charset'     => 'utf8',
         // 数据库表前缀
@@ -286,6 +286,12 @@ return [
         // 使用长连接
             \PDO::ATTR_PERSISTENT => true,
         ],
-        
     ],
+
+    'pagination'      => [
+        //默认当前页
+        'page'    =>    '1',
+        //默认一页的记录数目
+        'limit'   =>    10
+    ]
 ];

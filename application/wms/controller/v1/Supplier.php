@@ -30,10 +30,8 @@ class Supplier extends ApiController
 
 
     /**
-     * 保存新建的资源
-     *
-     * @param  \think\Request  $request
-     * @return \think\Response
+     * 描述：保存新建的资源
+     * @return array
      */
     public function save()
     {
@@ -47,17 +45,14 @@ class Supplier extends ApiController
 
     /**
      * 显示指定的资源
-     *
-     * @param  int  $id
      * @return \think\Response
      */
     public function read()
     {
         $param = $this->param;
-        $supplier =  new SupplierModel();
         $data = $this->wmsService()->getSupplierById($param['id']);
-        if (!$data) {
-            return resultArray(['error' => $supplier->getError()]);
+        if (is_string($data)) {
+            return resultArray(['error' => $data]);
         }
         return resultArray(['data' => $data]);
     }
@@ -65,9 +60,6 @@ class Supplier extends ApiController
 
     /**
      * 保存更新的资源
-     *
-     * @param  \think\Request  $request
-     * @param  int  $id
      * @return \think\Response
      */
     public function update()
@@ -84,8 +76,6 @@ class Supplier extends ApiController
 
     /**
      * 删除指定资源
-     *
-     * @param  int  $id
      * @return \think\Response
      */
     public function delete()
@@ -102,14 +92,12 @@ class Supplier extends ApiController
     
     /**
      * 批量删除指定资源
-     *
-     * @param  int  $id
      * @return \think\Response
      */
     public function deletes() {
         $param = $this->param;
         $supplier = new SupplierModel();
-        $data = $this->wmsService()->deleteSuppliersByIds($param);
+        $data = $this->wmsService()->deleteSuppliersByIds($param['ids']);
         if ($data!==true) {
             return resultArray(['error' => $data]);
         }

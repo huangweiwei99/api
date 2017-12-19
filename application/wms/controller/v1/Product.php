@@ -11,7 +11,6 @@ class Product extends ApiController
 {
     /**
      * 显示资源列表
-     *
      * @return \think\Response
      */
     public function index()
@@ -30,10 +29,8 @@ class Product extends ApiController
     }
 
     /**
-     * 保存新建的资源
-     *
-     * @param  \think\Request  $request
-     * @return \think\Response
+     * 描述：保存新建的资源
+     * @return array
      */
     public function save()
     {
@@ -44,30 +41,25 @@ class Product extends ApiController
         }
         return resultArray(['data' => '添加成功']);
     }
-    
+
     /**
-     * 显示指定的资源
-     *
-     * @param  int  $id
-     * @return \think\Response
+     * 描述：显示指定的资源
+     * @return array
      */
     public function read()
     {
         $param = $this->param;
-        $product =  new ProductModel();
         $data = $this->wmsService()->getProductById($param['id']);
-        if (!$data) {
-            return resultArray(['error' => $product->getError()]);
+        if (is_string($data)) {
+           return resultArray(['error' => $data]);
         }
         return resultArray(['data' => $data]);
     }
 
+
     /**
-     * 保存更新的资源
-     *
-     * @param  \think\Request  $request
-     * @param  int  $id
-     * @return \think\Response
+     * 描述：保存更新的资源
+     * @return array
      */
     public function update()
     {
@@ -81,27 +73,24 @@ class Product extends ApiController
     }
 
     /**
-     * 删除指定资源
-     *
-     * @param  int  $id
-     * @return \think\Response
+     * 描述：删除指定资源
+     * @return array
      */
+
     public function delete()
     {
         $param = $this->param;
-        $product =  new ProductModel();
         $data = $this->wmsService()->deleteProduct($param['id']);
         if ($data!==true) {
             return resultArray(['error' => $data]);
         }
         return resultArray(['data' => '删除成功']); 
     }
-    
+
+
     /**
-     * 批量删除指定资源
-     *
-     * @param  int  $id
-     * @return \think\Response
+     * 描述：批量删除指定资源
+     * @return array
      */
     public function deletes() {
         $param = $this->param;
@@ -112,7 +101,11 @@ class Product extends ApiController
         }
         return resultArray(['data' => '批量删除成功']);
     }
-    
+
+    /**
+     * 描述：保存产品对应的图片
+     * @return array
+     */
     public  function saveImages() {
         $request = Request::instance();
         $param = $this->param;

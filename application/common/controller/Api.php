@@ -15,14 +15,12 @@ namespace app\common\controller;
 use app\common\service\WMSService;
 use app\common\controller\Base as BaseController;
 
+
 /**
-* PHP类注释
-* 描述：
-* @date 2017年11月4日下午4:08:04
-* @container app\common\controller
-* @param unknowtype 
-* @return return_type 
-*/
+ * 类描述：
+ * Class Api
+ * @package app\common\controller
+ */
 class Api extends BaseController
 {
     public function _initialize()
@@ -31,11 +29,9 @@ class Api extends BaseController
     }
     
     /**
-    * 描述：在controller中一直引用wmsService方法
-    * @param unknowtype
-    * @return return_type
-    * @date 2017年11月4日下午4:08:55
-    */
+     * 描述：在controller中一直引用wmsService方法
+     * @return WMSService
+     */
     public function wmsService() {
         return new WMSService();
     }

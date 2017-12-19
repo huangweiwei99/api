@@ -1,348 +1,588 @@
 <?php
+
 namespace app\common\service;
 
-use app\common\service\BaseService;
 use app\wms\model\Product as ProductModel;
 use app\wms\model\Supplier as SupplierModel;
+use app\wms\model\Purchase as PurchaseModel;
+use think\Log;
 use think\Validate;
 use think\Request;
+use think\Config;
 use com\Upload;
+
 /**
-* PHP类注释
-* 描述：WMSService类包含了wms所有详细的操作
-* @date 2017年11月4日上午11:21:14
-* @container app\common\service
-* @param unknowtype 
-* @return return_type 
-*/
+ * 类描述：WMSService类包含了wms所有详细的操作
+ * Class WMSService
+ * @package app\common\service
+ */
 class WMSService extends BaseService
 {
     /*******************类属性*******************/
-    protected  $_page   = 1;  
-    protected  $_limit  = 10;
+    /**
+     * @var int 默认当前页
+     */
+    protected $_page;
 
-    protected $imageRule = ['ext'=>'jpg,png,gif','size'=>'51568','type'=>'image/jpeg,image/png'];
-    protected $imagePath = ROOT_PATH . 'public' . DS . 'uploads';
+    /**
+     * @var int 默认一页的记录数目
+     */
+    protected $_limit;
+
+    /**
+     * @var array 上传文件的限制条件
+     */
+    protected $imageRule;
+
+    /**
+     * @var array 上传文件的路径
+     */
+    protected $imagePath;
+
+    /**
+     * WMSService constructor.
+     */
+    public function __construct()
+    {
+        $this->imagePath = ROOT_PATH . 'public' . DS . 'uploads';
+        $this->imageRule = ['ext' => 'jpg,png,gif', 'size' => '51568', 'type' => 'image/jpeg,image/png'];
+        $this->_page = Config::get('pagination')['page'];
+        $this->_limit = Config::get('pagination')['limit'];;
+    }
     /*******************类方法*******************/
 
-    
+
     ////////////////////////Product////////////////////////
+
     /**
-    * 描述：通过ID获取产品详情
-    * @date 2017年11月5日上午9:35:56
-    * @param    int         $id          产品ID
-    * @return   bool/array               布尔值或者产品详情数组
-    */
-    public function getProductById($id) {
-        if (!Validate::is($id,'number') ) {
+     * 描述：通过ID获取产品详情
+     * @param int $id 产品ID
+     * @return array string|\think\Model
+     */
+    public function getProductById($id)
+    {
+
+        if (!Validate::is($id, 'number')) {
             return '请输入正确的参数';
         }
-        
+
         $product = new ProductModel();
         $data = $product->getDataById($id);
-        if(!$data){
-            return ['error' => $product->getError()];
+
+        if (!$data) {
+            return $product->getError();
         }
-        $data['images']=$data->images;
+        $data = $data->append(['images']);
         return $data;
     }
-    
+
     /**
-    * 描述：获取产品列表信息
-    * @date 2017年11月4日上午10:44:31
-    * @param    string    $keywords     搜索关键词
-    * @param    integer   $page         页序数
-    * @param    integer   $limit        每页数量
-    * @return   string|array            错误信息|产品列表
-    */
-    public function getProductList($keywords=null, $page=null, $limit=null) {
-        $product= new ProductModel();
-        
-        $keywords = Validate::is($keywords, 'chsAlphaNum') ? $keywords: '';
-        $page = Validate::is($page, 'number')? $page: $this->_page;
-        $limit = Validate::is($limit, 'number') & $limit<=1000? $limit: $this->_limit;
-       
-        $data= $product->getDataList($keywords, $page, $limit); 
-       
-        if ($data===false) {
+     * 描述：获取产品列表信息
+     * @date 2017年11月4日上午10:44:31
+     * @param    string $keywords 搜索关键词
+     * @param    integer $page 页序数
+     * @param    integer $limit 每页数量
+     * @return   string|array            错误信息|产品列表
+     */
+    public function getProductList($keywords = null, $page = null, $limit = null)
+    {
+        $keywords = Validate::is($keywords, 'chsAlphaNum') ? $keywords : '';
+        $page = Validate::is($page, 'number') ? $page : $this->_page;
+        $limit = Validate::is($limit, 'number') & $limit <= 1000 ? $limit : $this->_limit;
+
+//        if (!Validate::is($keywords, 'chsAlphaNum')&
+//            !Validate::is($page, 'number')&
+//            (!Validate::is($limit, 'number') & $limit<=1000)
+//        ){
+//            return '参数有误，请正确填写';
+//        }
+
+        $product = new ProductModel();
+        $data = $product->getDataList($keywords, $page, $limit);
+
+        if ($data === false) {
             return $product->getError();
         }
         return $data;
     }
-    
+
     /**
-    * 描述：创建新产品信息
-    * @date 2017年11月5日下午6:25:15
-    * @param    array       $param      产品信息数组
-    * @return   bool|string|array       true/错误信息   
-    */
-    public function saveProduct(Request $request) {
-        $param =$request->param();
+     * 描述：创建新产品信息
+     * @param Request $request
+     * @return array|bool|string   true|错误信息
+     */
+    public function saveProduct(Request $request)
+    {
+        $param = $request->param();
+        $product = new ProductModel();
         $files = $request->file('images');
-        
-        $product = new ProductModel();
-        
-        $upload = new Upload($files, $this->imageRule, $this->imagePath);
-        
-        $uploadResult= $upload->getFilesPath();
-        
-        if(empty($uploadResult)){
-            return $upload->getError();
+        if (!empty($files)) {
+            $upload = new Upload($files, $this->imageRule, $this->imagePath);
+            $uploadResult = $upload->getFilesPath();
+            if (empty($uploadResult)) {
+                return $upload->getError();
+            }
+            $param['images'] = $uploadResult;
         }
-        
-        $param['images'] = $uploadResult;
-        $data = $product->createData($param);
-        if ($data!==true) {
+        try {
+            $data = $product->createData($param);
+            if ($data !== true) {
+                return $product->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+
+    }
+
+    /**
+     * 描述：通过ID更新产品详情
+     * @date 2017年11月5日下午7:39:24
+     * @param    array $param 产品信息数组
+     * @param    integer $id 产品ID
+     * @return   bool|string|array       true/错误信息
+     */
+    public function updateProductById($param, $id)
+    {
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+        $product = new ProductModel();
+        try {
+            $data = $product->updateDataById($param, $id, 'update');
+            if ($data !== true) {
+                return $product->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+
+    }
+
+    /**
+     * 描述：根据ID删除产品详细
+     * @param integer $id 产品ID
+     * @return array|bool|null|string|\think\Model
+     */
+    public function deleteProduct($id)
+    {
+
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+
+        $product = new ProductModel();
+        try {
+            $data = $product->delDataById($id);
+            if ($data !== true) {
+                return $product->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+
+    }
+
+    /**
+     * 描述：根据ID批量删除产品详细
+     * @param $param
+     * @return array|bool|string
+     */
+    public function deleteProductsByIds($param)
+    {
+
+        $product = new ProductModel();
+        try {
+            $data = $product->delDataCollection($param);
+            if ($data !== true) {
+                return $product->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+
+    }
+
+    /**
+     * 描述：在存在产品信息下保存图片
+     * @date 2017年11月9日上午9:25:51
+     * @param    Request $request 请求信息
+     * @param    integer $id 产品ID
+     * @return   bool|string|array       true/错误信息
+     */
+    public function saveImageByProductId(Request $request, $id)
+    {
+        $product = new ProductModel();
+
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+
+        $product = $product->getDataById($id);
+        if (!$product) {
             return $product->getError();
         }
-        return $data;
-    }
-    
-    /**
-    * 描述：通过ID更新产品详情
-    * @date 2017年11月5日下午7:39:24
-    * @param    array       $param      产品信息数组
-    * @param    integer     $id         产品ID
-    * @return   bool|string|array       true/错误信息
-    */
-    public function updateProductById($param, $id) {
-        if (!Validate::is($id,'number') ) {
-            return '请输入正确的参数';
-        }
-        $product = new ProductModel();
-        $data = $product->updateDataById($param, $id, 'update');
-        if ($data!==true) {
-            return $product->getError();
-        }
-        return $data;
-    }
-    
-    /**
-    * 描述：根据ID删除产品详细
-    * @date 2017年11月5日下午3:00:31
-    * @param    integer     $id        产品ID
-    * @return   bool/array             true或者错误信息
-    */
-    public function deleteProduct($id) {
-        
-        if (!Validate::is($id,'number') ) {
-            return '请输入正确的参数';
-        }
-        
-        $product = new ProductModel();
-        $data = $product->delDataById($id);
-        if($data!==true){
-            return  $product->getError();
-        }
-        return $data;
-    }
-    
-    /**
-    * 描述：根据ID批量删除产品详细
-    * @date 2017年11月6日上午10:41:49
-    * @param    array      $ids     产品ID数组
-    * @return   bool                布尔值
-    */
-    public function deleteProductsByIds($param) {
-        $product = new ProductModel();
-        $data =$product->delDatas($param);
-        if($data!==true){
-            return  $product->getError();
-        }
-        return $data;
-    }
-    
-    /**
-    * 描述：在存在产品信息下保存图片
-    * @date 2017年11月9日上午9:25:51
-    * @param    Request     $request    请求信息
-    * @param    integer     $id         产品ID
-    * @return   bool|string|array       true/错误信息
-    */
-    public function saveImageByProductId(Request $request, $id) {
-        $product = new ProductModel();
-        
-        if (!Validate::is($id,'number') ) {
-            return '请输入正确的参数';
-        }
-        
-        $product= $product->getDataById($id);
-        if(!$product){
-            return  $product->getError();
-        }
-        
-        
+
+
         $files = $request->file('images');
-        $rule  = $this->imageRule;
-        $path  = $this->imagePath;
-      
+        $rule = $this->imageRule;
+        $path = $this->imagePath;
+
         $upload = new Upload($files, $rule, $path);
-        $uploadResult= $upload->getFilesPath();
-        if(empty($uploadResult)){
+        $uploadResult = $upload->getFilesPath();
+        if (empty($uploadResult)) {
             return $upload->getError();
         }
-      
+
         try {
             $product->images()->saveAll($uploadResult);
             return true;
-        } catch(\Exception $e) {
-            return '添加图片失败: '.$e->getMessage();
+        } catch (Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return '添加图片失败: ' . $e->getMessage();
         }
-       
+
     }
-    
-    
+
+
     ////////////////////////Supplier////////////////////////
+
     /**
-    * 描述：通过ID获取供应商详情
-    * @date 2017年11月17日下午4:53:56
-    * @param    int         $id          产品ID
-    * @return   bool/array               布尔值或者供应商详情数组
-    */
-    public function getSupplierById($id) {
+     * 描述：通过ID获取供应商详情
+     * @param $id
+     * @return $this|array|string 布尔值或者供应商详情数组
+     */
+    public function getSupplierById($id)
+    {
         if (!Validate::is($id, 'number')) {
             return '请输入正确的参数';
         }
         $supplier = new SupplierModel();
-        $data = $supplier->getDataById($id)->hidden(['products'=>['pivot']]);
-        if(!$data){
-            return ['error' => $supplier->getError()];
+        $data = $supplier->getDataById($id);//->hidden(['products'=>['pivot']]);
+        if (!$data) {
+            return $supplier->getError();
         }
-        $data['products']=$data->products;
+        $data = $data->append(['products']);
         return $data;
     }
 
     /**
      * 描述：获取供应商列表信息
-     * @date 2017年11月4日上午10:44:31
-     * @param    string    $keywords     搜索关键词
-     * @param    integer   $page         页序数
-     * @param    integer   $limit        每页数量
-     * @return   string|array            错误信息|供应商列表
+     * @param    string $keywords 搜索关键词
+     * @param    integer $page 页序数
+     * @param    integer $limit 每页数量
+     * @return array|bool|string
      */
-    public function getSupplierList($keywords,$page,$limit) {
-        $supplier =new SupplierModel();
-        
-        $keywords = Validate::is($keywords, 'chsAlphaNum') ? $keywords: '';
-        $page = Validate::is($page, 'number')? $page: $this->_page;
-        $limit = Validate::is($limit, 'number') & $limit<=1000? $limit: $this->_limit;
-        
-        $data= $supplier->getDataList($keywords, $page, $limit);
-        
-        if ($data===false) {
-            return $supplier->getError();
-        }
-        return $data;
-    }
-    
-    /**
-    * 描述：创建新的供应商
-    * @date 2017年11月17日上午11:37:14
-    * @param    array       $param      产品信息数组
-    * @return   bool|string|array       true/错误信息   
-    */
-    public function saveSupplier($param) {
+    public function getSupplierList($keywords, $page, $limit)
+    {
         $supplier = new SupplierModel();
-        
-        $data = $supplier->createData($param);
-        if($data !== true) {
+
+        $keywords = Validate::is($keywords, 'chsAlphaNum') ? $keywords : '';
+        $page = Validate::is($page, 'number') ? $page : $this->_page;
+        $limit = Validate::is($limit, 'number') & $limit <= 1000 ? $limit : $this->_limit;
+
+        $data = $supplier->getDataList($keywords, $page, $limit);
+
+        if ($data === false) {
             return $supplier->getError();
         }
         return $data;
     }
-    
+
     /**
-    * 描述：根据ID删除供应商详细
-    * @date 2017年11月20日上午10:06:39
-    * @param    integer     $id        产品ID
-    * @return   bool/array             true或者错误信息 
-    */
-    public function deleteSupplier($id) {
-        
-        if (!Validate::is($id, 'number')) {
-               return '请输入正确的参数';
+     * 描述：创建新的供应商
+     * @date 2017年11月17日上午11:37:14
+     * @param    array $param 产品信息数组
+     * @return   bool|string|array       true/错误信息
+     */
+    public function saveSupplier($param)
+    {
+        $supplier = new SupplierModel();
+
+        try {
+            $data = $supplier->createData($param);
+            if ($data !== true) {
+                return $supplier->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
         }
-        $supplier =new SupplierModel();
-        
-        $data = $supplier->delDataById($id);
-        if($data!==true){
-            return  $supplier->getError();
-        }
-        return $data;
+
     }
-    
+
     /**
-    * 描述：通过ID更新供应商详情
-    * @date 2017年11月5日下午7:39:24
-    * @param    array       $param      供应商信息数组
-    * @param    integer     $id         供应商ID
-    * @return   bool                    true|false
-    */
-    public function updateSupplierById($param, $id) {
+     * 描述：根据ID删除供应商详细
+     * @param    integer $id 产品ID
+     * @return   bool/array             true或者错误信息
+     * @return array|bool|string
+     */
+    public function deleteSupplier($id)
+    {
+
         if (!Validate::is($id, 'number')) {
             return '请输入正确的参数';
         }
-        $supplier =new SupplierModel();
-        $data = $supplier->updateDataById($param,$id);
-        if($data!==true){
-            return  $supplier->getError();
-        }
-        return $data;
-   }
-   
-   /**
-    * 描述：根据ID批量删除供应商详细
-    * @date 2017年11月6日上午10:41:49
-    * @param    array      $ids     供应商ID数组
-    * @return   bool                布尔值
-    */
-   public function deleteSuppliersByIds($param) {
-       
-       if (empty($param['ids'])) {
-           return '请输入正确的参数';
-       }
-       
         $supplier = new SupplierModel();
-        $data = $supplier->delDatas($param['ids']);
-        
-        if($data !== true){
-            return  $supplier->getError();
+
+        try {
+            $data = $supplier->delDataById($id);
+            if ($data !== true) {
+                return $supplier->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+
+    }
+
+    /**
+     * 描述：通过ID更新供应商详情
+     * @param    array $param 供应商信息数组
+     * @param    integer $id 供应商ID
+     * @return array|bool|null|string|\think\Model
+     */
+    /**
+     * 描述：
+     * @param $param
+     * @param $id
+     * @return array|bool|null|string|\think\Model
+     */
+    public function updateSupplierById($param, $id)
+    {
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+        $supplier = new SupplierModel();
+        try {
+            $data = $supplier->updateDataById($param, $id);
+            if ($data !== true) {
+                return $supplier->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+
+    }
+
+    /**
+     * 描述：根据ID批量删除供应商详细
+     * @param $param
+     * @return array|bool|string
+     */
+    public function deleteSuppliersByIds($param)
+    {
+
+        if (empty($param)) {
+            return '请输入正确的参数';
+        }
+
+        $supplier = new SupplierModel();
+        try {
+            $data = $supplier->delDataCollection($param['ids']);
+            if ($data !== true) {
+                return $supplier->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+
+
+    }
+
+    ////////////////////////Purchase////////////////////////
+    public function getPurchaseById($id)
+    {
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+
+        $purchase = new PurchaseModel();
+        $data = $purchase->getDataById($id);
+
+        if (!$data) {
+            return $purchase->getError();
+        }
+        $data->contents;
+        $data->hidden(['contents.update_time',
+            'contents.create_time',
+            'contents.pid',
+            'contents.supplier_id',
+            'contents.product_id',
+        ]);
+        return $data;
+    }
+
+    public function getPurchaseList($keywords, $page, $limit)
+    {
+        $purchase = new PurchaseModel();
+
+        $keywords = Validate::is($keywords, 'chsAlphaNum') ? $keywords : '';
+        $page = Validate::is($page, 'number') ? $page : $this->_page;
+        $limit = Validate::is($limit, 'number') & $limit <= 1000 ? $limit : $this->_limit;
+
+        $data = $purchase->getDataList($keywords, $page, $limit);
+
+        if ($data === false) {
+            return $purchase->getError();
         }
         return $data;
-        
+
     }
-    ////////////////////////Purchase////////////////////////
-    public function getPurchaseById($id) {
-        ;
+
+    public function savePurchase($param)
+    {
+
+        $content = [];
+        if (
+            empty($param['product_id']) &
+            empty($param['supplier_id'])
+        ) {
+            $content = [];
+        } elseif (
+            empty($param['product_id']) ||
+            empty($param['supplier_id'])
+        ) {
+            return '参数有误，请检查';
+        } elseif (
+            count($param['product_id']) != count($param['supplier_id'])
+        ) {
+            return '参数不全，请检查';
+        } else {
+            for ($i = 0; $i < count($param['product_id']); $i++) {
+
+                $content[] = ['product_id' => $param['product_id'][$i],
+                    'supplier_id' => $param['supplier_id'][$i]
+                ];
+            }
+        }
+        $param['content'] = $content;
+        $purchase = new PurchaseModel();
+        try {
+            $data = $purchase->createData($param);
+            if ($data !== true) {
+                return $purchase->getError();
+            }
+            return $data;
+        } catch (\Expection $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
     }
-    
-    public function getPurchaseList($param) {
-        ;
+
+    public function deletePurchase($id)
+    {
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+        $purchase = new PurchaseModel();
+
+        try {
+            $data = $purchase->delDataById($id);
+            if ($data !== true) {
+                return $purchase->getError();
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
     }
-    
-    public function savePurchase($param) {
-        ;
+
+    public function updatePurchaseById($param, $id)
+    {
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+        $content = [];
+        if (
+            empty($param['product_id']) &
+            empty($param['supplier_id'])
+        ) {
+            $content = [];
+        } elseif (
+            empty($param['product_id']) ||
+            empty($param['supplier_id'])
+        ) {
+            return '参数有误，请检查';
+        } elseif (
+            count($param['product_id']) != count($param['supplier_id'])
+        ) {
+            return '参数不全，请检查';
+        } else {
+            for ($i = 0; $i < count($param['product_id']); $i++) {
+
+                $content[] = ['product_id' => $param['product_id'][$i],
+                    'supplier_id' => $param['supplier_id'][$i]
+                ];
+            }
+        }
+        $param['content'] = $content;
+        $purchase = new PurchaseModel();
+
+        try {
+            $data = $purchase->updateDataById($param, $id);
+            if ($data !== true) {
+                return $purchase->getError();
+            }
+            return $data;
+
+        } catch (\Expection $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
     }
-    
-    public function deletePurchase($param) {
-        ;
+
+    public function deletePurchaseByIds($param)
+    {
+        if (empty($param)) {
+            return '请输入正确的参数';
+        }
+        $purchase = new PurchaseModel();
+        try {
+            $data = $purchase->delDataCollection($param);
+            if ($data !== true) {
+              return $purchase->getError();
+            }
+            return $data;
+        } catch (\Expection $e) {
+            return $e->getMessage();
+        }
     }
-    
-    
+
     ////////////////////////Order////////////////////////
-    public function getOrderById($id) {
+    public function getOrderById($id)
+    {
         ;
     }
-    
-    public function getOrderList($param) {
+
+    public function getOrderList($param)
+    {
         ;
     }
-    
-    public function saveOrder($param) {
+
+    public function saveOrder($param)
+    {
         ;
     }
-    
-    public function deleteOrder($param) {
+
+    public function deleteOrder($param)
+    {
         ;
     }
+
 }
