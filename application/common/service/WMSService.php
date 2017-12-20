@@ -247,7 +247,7 @@ class WMSService extends BaseService
     }
 
     /**
-     * 描述：
+     * 描述：通过产品ID删除产品对应的图片
      * @param $id
      * @return array|bool|null|string|\think\Model
      */
