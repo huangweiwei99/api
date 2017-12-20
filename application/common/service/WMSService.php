@@ -5,6 +5,7 @@ namespace app\common\service;
 use app\wms\model\Product as ProductModel;
 use app\wms\model\Supplier as SupplierModel;
 use app\wms\model\Purchase as PurchaseModel;
+use think\exception\PDOException;
 use think\Log;
 use think\Validate;
 use think\Request;
@@ -89,13 +90,6 @@ class WMSService extends BaseService
         $keywords = Validate::is($keywords, 'chsAlphaNum') ? $keywords : '';
         $page = Validate::is($page, 'number') ? $page : $this->_page;
         $limit = Validate::is($limit, 'number') & $limit <= 1000 ? $limit : $this->_limit;
-
-//        if (!Validate::is($keywords, 'chsAlphaNum')&
-//            !Validate::is($page, 'number')&
-//            (!Validate::is($limit, 'number') & $limit<=1000)
-//        ){
-//            return '参数有误，请正确填写';
-//        }
 
         $product = new ProductModel();
         $data = $product->getDataList($keywords, $page, $limit);
@@ -252,6 +246,11 @@ class WMSService extends BaseService
 
     }
 
+    /**
+     * 描述：
+     * @param $id
+     * @return array|bool|null|string|\think\Model
+     */
     public function deleteImageByProductId($id)
     {
         if (!Validate::is($id, 'number')) {
@@ -259,14 +258,13 @@ class WMSService extends BaseService
         }
 
         $product = new ProductModel();
-
         try {
             $data = $product->delImagesById($id);
             if ($data !== true) {
                 return $product->getError();
             }
             return $data;
-        } catch (\Expection $e) {
+        } catch (\Exception $e) {
             Log::write($e->getMessage(), 'error');
             return $e->getMessage();
         }
@@ -285,16 +283,16 @@ class WMSService extends BaseService
             return '请输入正确的参数';
         }
         $supplier = new SupplierModel();
-        $data = $supplier->getDataById($id)->hidden(['products'=>['pivot']]);
+        $data = $supplier->getDataById($id);
+
         if (!$data) {
             return $supplier->getError();
         }
 
         $data['products'] = $data->products;
-        $data->hidden(['products.update_time','products.create_time','products.id']);
+        $data->hidden(['products.update_time', 'products.create_time', 'products.id']);
         return $data;
     }
-
 
     /**
      * 描述：获取供应商列表信息
@@ -373,12 +371,6 @@ class WMSService extends BaseService
      * 描述：通过ID更新供应商详情
      * @param    array $param 供应商信息数组
      * @param    integer $id 供应商ID
-     * @return array|bool|null|string|\think\Model
-     */
-    /**
-     * 描述：
-     * @param $param
-     * @param $id
      * @return array|bool|null|string|\think\Model
      */
     public function updateSupplierById($param, $id)
@@ -578,7 +570,7 @@ class WMSService extends BaseService
         try {
             $data = $purchase->delDataCollection($param);
             if ($data !== true) {
-              return $purchase->getError();
+                return $purchase->getError();
             }
             return $data;
         } catch (\Expection $e) {
