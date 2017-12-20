@@ -15,17 +15,18 @@ namespace app\wms\model;
 
 use app\common\model\WMSBase as WMSBaseModel;
 
-class Product extends WMSBaseModel {
-    
-    
+class Product extends WMSBaseModel
+{
+
+
     /*******************类属性*******************/
-    
-    
-    
+
+
     /*******************类方法*******************/
-  
-    public  function suppliers() {
-        return $this->belongsToMany('supplier','gms_supplier_product');
+
+    public function suppliers()
+    {
+        return $this->belongsToMany('supplier', 'gms_supplier_product');
     }
 
     /**
@@ -34,51 +35,52 @@ class Product extends WMSBaseModel {
      */
     public function images()
     {
-       // return 'sadasdas';
-        return $this->hasMany('\\app\\system\\model\\Upload','product_id')->field('id,path');
+        // return 'sadasdas';
+        return $this->hasMany('\\app\\system\\model\\Upload', 'product_id')->field('id,path');
     }
 
     /**
      * 描述：获取产品列表信息
-     * @param string $keywords        搜索关键词
-     * @param integer $page           页序数
-     * @param integer $limit          每页数量
+     * @param string $keywords 搜索关键词
+     * @param integer $page 页序数
+     * @param integer $limit 每页数量
      * @return bool|string|array      false|错误信息|产品列表
      */
-    public function getDataList($keywords, $page, $limit) {
+    public function getDataList($keywords, $page, $limit)
+    {
         $map = [];
-        
-         if ($keywords) {
-             $map['name|sku'] = ['like', '%'.$keywords.'%'];
-         }
-          try {
-              $dataCount = $this->alias('product')->where($map)->count('id');
-              
-              if ($dataCount===0) {
-                  $this->error = '没有数据';
-                  return false;
-              }
-              
-              $list=$this
-              ->where($map)->alias('gms_product');
-              
-              // 若有分页
-              if ($page && $limit) {
-                  $list = $list->page($page, $limit);
-              }
-              
-              $list = $list->select();
-              
-              $data['list'] =$list;
-              $data['count'] =$dataCount;
-              
-              return $data;
-              
-          } catch (\Exception $e) {
-              $this->error = iconv('','utf-8',$e->getMessage());
-              return false;
-          }
-        
+
+        if ($keywords) {
+            $map['name|sku'] = ['like', '%' . $keywords . '%'];
+        }
+        try {
+            $dataCount = $this->alias('product')->where($map)->count('id');
+
+            if ($dataCount === 0) {
+                $this->error = '没有数据';
+                return false;
+            }
+
+            $list = $this
+                ->where($map)->alias('gms_product');
+
+            // 若有分页
+            if ($page && $limit) {
+                $list = $list->page($page, $limit);
+            }
+
+            $list = $list->select();
+
+            $data['list'] = $list;
+            $data['count'] = $dataCount;
+
+            return $data;
+
+        } catch (\Exception $e) {
+            $this->error = iconv('', 'utf-8', $e->getMessage());
+            return false;
+        }
+
     }
 
     /**
@@ -87,7 +89,8 @@ class Product extends WMSBaseModel {
      * @return bool
      * @throws \think\exception\PDOException
      */
-    public function createData($param) {
+    public function createData($param)
+    {
         // 验证
         $validate = validate($this->name);
         if (!$validate->check($param)) {
@@ -102,8 +105,8 @@ class Product extends WMSBaseModel {
             }
             $this->commit();
             return true;
-        } catch(\Exception $e) {
-            $this->error = '添加失败:'.$e->getMessage();
+        } catch (\Exception $e) {
+            $this->error = '添加失败:' . $e->getMessage();
             $this->rollback();
             return false;
         }
@@ -111,9 +114,9 @@ class Product extends WMSBaseModel {
 
     /**
      * 描述：根据产品ID更新产品详情
-     * @param array $param              产品详情属性数组
-     * @param int $id                   产品ID
-     * @param null $scense              验证场景
+     * @param array $param 产品详情属性数组
+     * @param int $id 产品ID
+     * @param null $scense 验证场景
      * @return bool|null|\think\Model   布尔值
      * @throws \think\exception\PDOException
      */
@@ -124,7 +127,7 @@ class Product extends WMSBaseModel {
         if (!$validate->scene($scense)->check($param)) {
             $this->error = $validate->getError();
             return false;
-         }
+        }
         $this->startTrans();
         try {
             $data = $this->getDataById($id);
@@ -134,8 +137,8 @@ class Product extends WMSBaseModel {
             $this->allowField(true)->save($param, [$this->getPk() => $id]);
             $this->commit();
             return true;
-        } catch(\Exception $e) {
-            $this->error = '编辑失败 : '.$e->getMessage();
+        } catch (\Exception $e) {
+            $this->error = '编辑失败 : ' . $e->getMessage();
             $this->rollback();
             return false;
         }
@@ -143,8 +146,8 @@ class Product extends WMSBaseModel {
 
     /**
      * 描述：根据id删除数
-     * @param string $id                        产品ID
-     * @param bool $delSon                      是否存在子集
+     * @param string $id 产品ID
+     * @param bool $delSon 是否存在子集
      * @return bool|null|\think\Model           布尔值
      * @throws \think\exception\PDOException
      */
@@ -157,18 +160,21 @@ class Product extends WMSBaseModel {
                 return $data;
             }
             $data = $this->getDataById($id);
-            $images=$data->images();
+            $images = $data->images();
             $imageList = $images->select();
             if ($data->delete()) {
                 $images->delete();
             }
-            foreach ($imageList as $image){
-                unlink(ROOT_PATH . 'public' . DS . 'uploads'. DS .str_replace('/', DIRECTORY_SEPARATOR, $image->path));  
+            foreach ($imageList as $image) {
+                $path = ROOT_PATH . 'public' . DS . 'uploads'. DS .str_replace('/', DIRECTORY_SEPARATOR, $image->path);
+                if (is_file($path)) {
+                    unlink($path);
+                }
             }
             $this->commit();
             return true;
-        } catch(\Exception $e) {
-            $this->error = '删除失败: '.$e->getMessage();
+        } catch (\Exception $e) {
+            $this->error = '删除失败: ' . $e->getMessage();
             $this->rollback();
             return false;
         }
@@ -203,10 +209,13 @@ class Product extends WMSBaseModel {
                    $images->delete();
                }
                foreach ($imageList as $image){
-                   unlink(ROOT_PATH . 'public' . DS . 'uploads'. DS .str_replace('/', DIRECTORY_SEPARATOR, $image->path));
+                   $path = ROOT_PATH . 'public' . DS . 'uploads'. DS .str_replace('/', DIRECTORY_SEPARATOR, $image->path);
+                   if (is_file($path)) {
+                       unlink($path);
+                   }
                }
            }
-           $this->commit();
+           //$this->commit();
            return true;
         } catch (\Exception $e) {
            $this->error = '操作失败: '.$e->getMessage();
@@ -215,5 +224,40 @@ class Product extends WMSBaseModel {
         }
         
     }
+
+    /**
+     * 描述：根据产品ID的值删除已有的图片数据
+     * @param string $id
+     * @return bool|null|\think\Model
+     * @throws \think\exception\PDOException
+     */
+    public function delImagesById($id = '')
+    {
+        $this->startTrans();
+        try {
+            $data = $this->getDataById($id);
+            if (!$data) {
+                return $data;
+            }elseif (empty($data->images)){
+                $this->error = '没有图片数据';
+                return false;
+            }
+
+            foreach ($data->images()->where(['product_id'=>$id])->select() as $image){
+                $path = ROOT_PATH . 'public' . DS . 'uploads'. DS .str_replace('/', DIRECTORY_SEPARATOR, $image->path);
+                if (is_file($path)) {
+                    unlink($path);
+                }
+            }
+            $data->images()->where(['product_id'=>$id])->delete();
+            $this->commit();
+            return true;
+        } catch (\Expection $e) {
+            $this->error = '图片删除失败 : '.$e->getMessage();
+            $this->rollback();
+            return false;
+        }
+    }
+
 }
 

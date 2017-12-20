@@ -115,4 +115,16 @@ class Product extends ApiController
         }
         return resultArray(['data' => '添加图片成功']);
     }
+
+    public function deleteImages()
+    {
+        //dump('sadada');die();
+        $param = $this->param;
+        $data = $this->wmsService()->deleteImageByProductId($param['id']);
+        if($data!==true){
+            return resultArray(['error' => $data]);
+        }
+        return resultArray(['data' => '删除图片成功']);
+    }
+
 }

@@ -22,6 +22,8 @@ Route::resource('/:version/wms/orders','wms/:version.Order');
 return [
     //以ID数组批量删除产品
     '/:version/wms/products/deletes' => ['wms/:version.Product/deletes', ['method' => 'POST']],
+
+    '/:version/wms/products/:id/images/delete' => ['wms/:version.Product/deleteImages', ['method' => 'DELETE']],
     //在存在产品下以产品ID储存图片
     '/:version/wms/products/:id/images' => ['wms/:version.Product/saveImages', ['method' => 'POST']],
     //以ID数组批量删除供应商

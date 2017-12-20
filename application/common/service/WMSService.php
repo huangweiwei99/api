@@ -252,6 +252,25 @@ class WMSService extends BaseService
 
     }
 
+    public function deleteImageByProductId($id)
+    {
+        if (!Validate::is($id, 'number')) {
+            return '请输入正确的参数';
+        }
+
+        $product = new ProductModel();
+
+        try {
+            $data = $product->delImagesById($id);
+            if ($data !== true) {
+                return $product->getError();
+            }
+            return $data;
+        } catch (\Expection $e) {
+            Log::write($e->getMessage(), 'error');
+            return $e->getMessage();
+        }
+    }
 
     ////////////////////////Supplier////////////////////////
 
