@@ -5,7 +5,6 @@ namespace app\common\service;
 use app\wms\model\Product as ProductModel;
 use app\wms\model\Supplier as SupplierModel;
 use app\wms\model\Purchase as PurchaseModel;
-use think\exception\PDOException;
 use think\Log;
 use think\Validate;
 use think\Request;
