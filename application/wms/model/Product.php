@@ -20,7 +20,10 @@ class Product extends WMSBaseModel
 
 
     /*******************类属性*******************/
-
+    public function initialize()
+    {
+        $this->append(['images']);
+    }
 
     /*******************类方法*******************/
 
@@ -35,7 +38,6 @@ class Product extends WMSBaseModel
      */
     public function images()
     {
-        // return 'sadasdas';
         return $this->hasMany('\\app\\system\\model\\Upload', 'product_id')->field('id,path');
     }
 

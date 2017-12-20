@@ -12,6 +12,11 @@ class Supplier extends WMSBaseModel
 
     /*******************类方法*******************/
 
+    public function getContentAttr()
+    {
+        return 'sadasdasdsa';
+    }
+
     /**
      * 描述：获取供应商所提供的产品
      * @date 2017年11月17日下午3:37:32
@@ -19,7 +24,7 @@ class Supplier extends WMSBaseModel
      */
     public function products()
     {
-        return $this->belongsToMany('product', 'gms_supplier_product');
+        return $this->belongsToMany('product', 'gms_supplier_product','product_id','supplier_id');
     }
 
     /**

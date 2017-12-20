@@ -285,13 +285,16 @@ class WMSService extends BaseService
             return '请输入正确的参数';
         }
         $supplier = new SupplierModel();
-        $data = $supplier->getDataById($id);//->hidden(['products'=>['pivot']]);
+        $data = $supplier->getDataById($id)->hidden(['products'=>['pivot']]);
         if (!$data) {
             return $supplier->getError();
         }
-        $data = $data->append(['products']);
+
+        $data['products'] = $data->products;
+        $data->hidden(['products.update_time','products.create_time','products.id']);
         return $data;
     }
+
 
     /**
      * 描述：获取供应商列表信息
