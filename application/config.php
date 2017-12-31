@@ -125,7 +125,7 @@ return [
         // 模板引擎类型 支持 php think 支持扩展
         'type'         => 'Think',
         // 模板路径
-        'view_path'    => '',
+        'view_path'    => '',//ROOT_PATH,//'',
         // 模板后缀
         'view_suffix'  => 'html',
         // 模板文件名分隔符
@@ -293,5 +293,23 @@ return [
         'page'    =>    '1',
         //默认一页的记录数目
         'limit'   =>    10
+    ],
+
+    // +----------------------------------------------------------------------
+    // | paypal设置
+    // +----------------------------------------------------------------------
+    'paypal_config_base'  => [
+        "mode" => "sandbox",
+        'log.LogEnabled' => true,
+        'log.FileName' => '../PayPal.log',
+        'log.LogLevel' => 'FINE',
+    ],
+
+    'paypal_config_vson_mail' =>[
+        "acct1.UserName" => "jb-us-seller_api1.paypal.com",
+        "acct1.Password" => "WX4WTU3S8MY44S7F",
+        "acct1.Signature" => "AFcWxV21C7fd0v3bYYYRCpSSRl31A7yDhhsPUU2XhtMoZXsWHFxu-RWy",
     ]
+
+
 ];

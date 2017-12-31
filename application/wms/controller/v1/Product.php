@@ -2,7 +2,6 @@
 
 namespace app\wms\controller\v1;
 
-use think\Controller;
 use think\Request;
 use app\common\controller\Api as ApiController;
 use app\wms\model\Product as ProductModel;
@@ -40,6 +39,11 @@ class Product extends ApiController
             return resultArray(['error' => $data]);
         }
         return resultArray(['data' => '添加成功']);
+    }
+
+    public function sync()
+    {
+        
     }
 
     /**

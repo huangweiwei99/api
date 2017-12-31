@@ -1,0 +1,69 @@
+<html>
+<head>
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript">
+
+        $(function () {
+            var status = true;
+            (longPolling=function () {
+                $.ajax({
+                    url: "sync",
+                    data:
+                        {
+                            "timed": Date.parse(new Date())/1000,
+                            "startDate": '2017-12-20T00:00:00+0100',
+                            "endDate": '2017-12-21T00:00:00+0100',
+                            "account":'paypal_config_vson_mail',
+                            "case":'paypal'
+                        },
+                    dataType: "json",
+                    // beforeSend: function(){
+                    //     $('#state').text('正在处理，请稍等！');
+                    // },
+                    //timeout: 5000,//5秒超时，可自定义设置
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        $("#state").append("[state: " + textStatus + ", error: " + errorThrown + " ]<br/>");
+                        if (textStatus == "timeout") { // 请求超时
+
+                            if (status) {
+                                status= false;
+                                window.setInterval("longPolling()", 3000);
+                            }
+
+                        } else { // 其他错误，如网络错误等
+                            if (status) {
+                                status= false;
+                                window.setInterval("longPolling()", 3000);
+                            }
+                        }
+                    },
+                    success: function (data, textStatus) {
+                        if(data.data===100){
+                            $("#state").append("[state: " + textStatus + ", data: { 同步已完成 } ]<br/>");
+                            stop();
+                            window.location.reload();
+                        }else if(data.data===0){
+                            $("#state").append("[state: " + textStatus + ", data: { 同步现在开始 } ]<br/>");
+                        }else{
+                            $("#state").append("[state: " + textStatus + ", data: { 已同步 " + data.data + "% } ]<br/>");
+                        }
+
+
+                        if (status) {
+                            status= false;
+                            window.setInterval("longPolling()", 3000);
+                        }
+                    }
+                });
+
+            })();
+        });
+    </script>
+</head>
+<body>
+<div id="state"></div>
+</body>
+</html>

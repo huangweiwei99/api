@@ -25,7 +25,7 @@ class Http extends Handle
         }
         $result = [
             'code' => $statusCode,
-            'error' => $e->getMessage(),
+            'error' => $e->getMessage().$e->getTraceAsString(),
             'type'=>'system',
             'time' => $_SERVER['REQUEST_TIME']
         ];

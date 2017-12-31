@@ -28,7 +28,13 @@ return [
     '/:version/wms/products/:id/images' => ['wms/:version.Product/saveImages', ['method' => 'POST']],
     //以ID数组批量删除供应商
     '/:version/wms/suppliers/deletes' => ['wms/:version.Supplier/deletes', ['method' => 'POST']],
-    //以ID数组批量删除采购单
+    //以ID数组批量删除采购单sync
     '/:version/wms/purchase/deletes' => ['wms/:version.Purchase/deletes', ['method' => 'POST']],
+
+    '/:version/wms/orders/sync' => ['wms/:version.Order/sync', ['method' => 'GET']],
+
+    '/:version/wms/orders/test' => ['wms/:version.Order/test', ['method' => 'GET']],
+
+    '/:version/wms/orders/test2' => ['wms/:version.Order/test2', ['method' => 'GET']],
 ];
 
